@@ -69,12 +69,13 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:38080/$code")" = 302
           curl --fail --silent http://127.0.0.1:38080/api/links | jq -e --arg code "$code" '.[] | select(.code == $code and .hits == 1)' >/dev/null
       - name: Scan the candidate image
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        uses: anchore/scan-action@e1165082ffb1fe366ebaf02d8526e7c4989ea9d2 # v7
         with:
-          image-ref: snip-verified-candidate:local
-          format: table
-          exit-code: "1"
-          severity: HIGH,CRITICAL
+          image: snip-verified-candidate:local
+          output-format: table
+          fail-build: "true"
+          severity-cutoff: high
+          grype-version: v0.121.3
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
