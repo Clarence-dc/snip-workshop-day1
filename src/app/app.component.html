@@ -1,0 +1,104 @@
+<main class="page-shell">
+  <header class="hero">
+    <span class="eyebrow">SNIP · LINK SHORTENER</span>
+    <h1>Short links, <span>made simple.</span></h1>
+    <p>Turn a long URL into a link that's ready to share.</p>
+  </header>
+
+  <section class="composer card" aria-labelledby="create-heading">
+    <h2 id="create-heading">Create a short link</h2>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label for="url">Destination URL</label>
+      <div class="form-row">
+        <input
+          id="url"
+          type="url"
+          formControlName="url"
+          placeholder="https://example.com/your-long-link"
+          autocomplete="url"
+          inputmode="url"
+          [attr.aria-invalid]="urlControl.invalid && (urlControl.touched || urlControl.dirty)"
+          [attr.aria-describedby]="urlControl.invalid && (urlControl.touched || urlControl.dirty) ? 'url-hint url-error' : 'url-hint'"
+        />
+        <button type="submit" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Creating…' : 'Shorten URL' }}
+        </button>
+      </div>
+      <p id="url-hint" class="field-hint">Use a valid HTTP or HTTPS address.</p>
+      @if (urlControl.invalid && (urlControl.touched || urlControl.dirty)) {
+        <p id="url-error" class="field-error" role="alert">
+          @if (urlControl.hasError('required')) {
+            Enter a URL to continue.
+          } @else if (urlControl.hasError('server')) {
+            {{ urlControl.getError('server') }}
+          } @else {
+            Enter a valid URL beginning with http:// or https://.
+          }
+        </p>
+      }
+    </form>
+
+    @if (createdLink(); as link) {
+      <div class="notice notice-success" role="status" aria-live="polite">
+        <div>
+          <strong>Your short link is ready</strong>
+          <a [href]="link.shortUrl" target="_blank" rel="noopener noreferrer">{{ link.shortUrl }}</a>
+        </div>
+        <span class="created-code">/{{ link.code }}</span>
+      </div>
+    }
+
+    @if (submitError()) {
+      <p class="notice notice-error" role="alert">{{ submitError() }}</p>
+    }
+  </section>
+
+  <section class="links-section" aria-labelledby="links-heading">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">YOUR LINKS</span>
+        <h2 id="links-heading">Link activity</h2>
+      </div>
+      <span class="link-count">{{ links().length }} {{ links().length === 1 ? 'link' : 'links' }}</span>
+    </div>
+
+    @if (isLoading()) {
+      <p class="empty-state" role="status" aria-live="polite">Loading your links…</p>
+    } @else if (loadError()) {
+      <p class="empty-state notice-error" role="alert">{{ loadError() }}</p>
+    } @else if (links().length === 0) {
+      <div class="empty-state card">
+        <strong>No links yet</strong>
+        <p>Your shortened URLs will appear here.</p>
+      </div>
+    } @else {
+      <div class="table-wrap card">
+        <table>
+          <caption class="visually-hidden">Shortened links and their visit counts</caption>
+          <thead>
+            <tr>
+              <th scope="col">Short link</th>
+              <th scope="col">Original URL</th>
+              <th scope="col" class="hits-column">Hits</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (link of links(); track link.code) {
+              <tr>
+                <td>
+                  <a class="short-link" [href]="link.shortUrl" target="_blank" rel="noopener noreferrer">
+                    {{ link.code }}
+                  </a>
+                </td>
+                <td class="original-url">
+                  <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.url }}</a>
+                </td>
+                <td class="hits-column">{{ link.hits }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>
