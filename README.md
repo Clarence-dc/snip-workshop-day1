@@ -1,6 +1,6 @@
 # Snip Frontend
 
-The Angular 19 client for Snip. It validates HTTP(S) URLs, creates short links,
+The Angular 20 client for Snip. It validates HTTP(S) URLs, creates short links,
 and lists link hit counts from the shared backend API.
 
 ## Run locally
