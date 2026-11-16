@@ -1,5 +1,9 @@
 # Recreate This Repo, Prompt by Prompt
 
+> This tutorial retains its original Angular 19 prompts. The implemented
+> `frontend` branch uses Angular 20, approved for security remediation; its
+> project name and build output path remain the same.
+
 Rebuild **Snip** — the tiny URL shortener behind this demo — and its **git-submodule
 architecture** by pasting six prompts into an AI coding agent (Claude Code or any agent
 that can run shell commands). Paste each prompt whole, run the short **verify** check,

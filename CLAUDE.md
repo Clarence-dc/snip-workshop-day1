@@ -6,7 +6,7 @@ mounts them as pinned submodules on `main`.
 | Path | Branch | Stack and notes |
 |---|---|---|
 | `backend/` | `backend` | Bun API, zero dependencies, in-memory storage |
-| `frontend/` | `frontend` | Angular 19; project `snip-frontend`; output `dist/snip-frontend/browser` |
+| `frontend/` | `frontend` | Angular 20; project `snip-frontend`; output `dist/snip-frontend/browser` |
 | `cli/` | `cli` | Node.js CommonJS; zero dependencies |
 | `bundle/` | `bundle` | Generated release; do not hand-edit generated files |
 | `scripts/build-bundle.mjs` | `main` | Cross-platform, idempotent release builder |

@@ -7,7 +7,7 @@ Each layer keeps its files at the root of its own branch.
 | Layer | Branch | Stack |
 |---|---|---|
 | Backend | `backend` | Bun 1.x, zero dependencies, in-memory `Map` |
-| Frontend | `frontend` | Angular 19, standalone component, signals, HttpClient |
+| Frontend | `frontend` | Angular 20, standalone component, signals, HttpClient |
 | CLI | `cli` | Node.js, CommonJS, zero dependencies |
 | Release | `bundle` | Generated API, web app, CLI, and Dockerfile |
 
@@ -58,10 +58,12 @@ node scripts/build-bundle.mjs
 node scripts/build-bundle.mjs --push
 ```
 
-The first command builds and commits the bundle locally. The second also pushes
-the generated branch and updates the `main` gitlink. The bundle serves the web
-UI and API from one Bun process. Its Docker image is published to
-`ghcr.io/clarence-dc/snip-workshop-day1`.
+The builder updates source submodules to their branch tips, installs their locked
+dependencies, runs frontend tests and security audits, builds, and commits the
+bundle locally. The second command also pushes the generated branch and updates
+the `main` gitlink. The bundle serves the web UI and API from one Bun process.
+The image workflow publishes to `ghcr.io/clarence-dc/snip-workshop-day1` only
+after its checks pass.
 
 ## Updating a layer
 

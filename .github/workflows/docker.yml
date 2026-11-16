@@ -1,0 +1,93 @@
+name: Build and push image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bundle
+      - .github/workflows/docker.yml
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Build bundle"]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: snip-image
+  cancel-in-progress: false
+
+jobs:
+  docker:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pinned submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Verify source revisions and copied code
+        run: |
+          node -e "const r=require('./bundle/source-revisions.json'); const cp=require('node:child_process'); for (const n of ['backend','frontend','cli']) { const actual=cp.execFileSync('git',['-C',n,'rev-parse','HEAD'],{encoding:'utf8'}).trim(); if (r[n] !== actual) throw Error(n+' revision does not match bundle'); }"
+          cmp backend/server.js bundle/server.js
+          cmp cli/cli.js bundle/cli.js
+      - name: Install, audit and test frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --omit=dev
+          npm audit --audit-level=high
+          npx ng test --watch=false --browsers=ChromeHeadless
+          npx ng build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Build image once for testing and publication
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./bundle
+          load: true
+          tags: snip-verified-candidate:local
+      - name: Smoke-test image, API, and CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name snip-test -p 127.0.0.1:38080:3000 snip-verified-candidate:local
+          trap 'docker rm -f snip-test >/dev/null' EXIT
+          curl --retry 20 --retry-delay 1 --retry-connrefused --fail --silent http://127.0.0.1:38080/api/links >/dev/null
+          curl --fail --silent http://127.0.0.1:38080/ | grep -q '<app-root'
+          export SNIP_API=http://127.0.0.1:38080
+          short=$(node cli/cli.js add https://example.com)
+          code=${short##*/}
+          node cli/cli.js ls | grep -F "$code"
+          test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:38080/$code")" = 302
+          curl --fail --silent http://127.0.0.1:38080/api/links | jq -e --arg code "$code" '.[] | select(.code == $code and .hits == 1)' >/dev/null
+      - name: Scan the candidate image
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          image-ref: snip-verified-candidate:local
+          format: table
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the tested image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=ghcr.io/clarence-dc/snip-workshop-day1
+          short_sha=$(git rev-parse --short=7 HEAD)
+          docker tag snip-verified-candidate:local "$image:latest"
+          docker tag snip-verified-candidate:local "$image:sha-$short_sha"
+          docker push "$image:latest"
+          docker push "$image:sha-$short_sha"
