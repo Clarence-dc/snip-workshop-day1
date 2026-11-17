@@ -59,8 +59,8 @@ jobs:
         run: |
           set -euo pipefail
           docker run -d --name snip-test -p 127.0.0.1:38080:3000 snip-verified-candidate:local
-          trap 'docker rm -f snip-test >/dev/null' EXIT
-          curl --retry 20 --retry-delay 1 --retry-connrefused --fail --silent http://127.0.0.1:38080/api/links >/dev/null
+          trap 'status=$?; if [ "$status" -ne 0 ]; then docker logs snip-test >&2 || true; fi; docker rm -f snip-test >/dev/null; exit "$status"' EXIT
+          curl --retry 20 --retry-delay 1 --retry-all-errors --max-time 3 --fail --silent --show-error http://127.0.0.1:38080/api/links >/dev/null
           curl --fail --silent http://127.0.0.1:38080/ | grep -q '<app-root'
           export SNIP_API=http://127.0.0.1:38080
           short=$(node cli/cli.js add https://example.com)
