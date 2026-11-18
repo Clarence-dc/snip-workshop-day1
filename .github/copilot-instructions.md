@@ -40,7 +40,7 @@ bundle and bump the `main` pointer.
   requires `frontend/dist/snip-frontend/browser/index.html`.
 - Never hand-edit generated bundle files; regenerate them with the build script.
 - Keep the bundle build idempotent and cross-platform.
-- The bundle workflow is schedule/manual only; a push workflow on `main` cannot
+- The bundle workflow is manual only (schedule disabled); a push workflow on `main` cannot
   rebuild in response to pushes on component branches.
 - Docker CI's `paths: [bundle]` filter watches the submodule gitlink; do not
   change it to `bundle/**`.
